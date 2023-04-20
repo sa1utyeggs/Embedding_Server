@@ -1,0 +1,11 @@
+torch~=2.0.0
+scikit-learn~=1.2.2
+text2vec~=1.1.7
+numpy~=1.24.2
+datasets~=2.11.0
+uvicorn~=0.21.1
+fastapi~=0.95.0
+pydantic~=1.10.7
+starlette~=0.26.1
+loguru~=0.6.0
+sentence-transformers~=2.2.2
