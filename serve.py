@@ -15,6 +15,7 @@ from loguru import logger
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 from starlette.middleware.cors import CORSMiddleware
+from text2vec import Similarity
 
 sys.path.append('..')
 
@@ -26,7 +27,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--model_name_or_path", type=str, default="./model/text2vec-base-chinese_ATEC_128DIM",
                     help="Model save dir or model name")
 args = parser.parse_args()
-s_model = SentenceTransformer(args.model_name_or_path)
+vector_model = SentenceTransformer(args.model_name_or_path)
+sim_model = Similarity(args.model_name_or_path)
 # s_model = SentenceModel(args.model_name_or_path)
 
 # define the app
@@ -43,13 +45,19 @@ class EmbeddingRequest(BaseModel):
     sentences: List[str] = []
 
 
+class SimilarityRequest(BaseModel):
+    sentences1: List[str] = []
+    sentences2: List[str] = []
+
+
 @app.post('/embedding')
 async def embedding(body: EmbeddingRequest):
     sentences = body.sentences
     # https://www.sbert.net/docs/package_reference/SentenceTransformer.html?highlight=stop
     # batch_size – the batch size used for the computation
-    sentence_embeddings = s_model.encode(sentences, batch_size=8, show_progress_bar=False, normalize_embeddings=True)
-    print(type(sentence_embeddings), sentence_embeddings.shape)
+    sentence_embeddings = vector_model.encode(sentences, batch_size=8, show_progress_bar=True,
+                                              normalize_embeddings=True)
+    # print(type(sentence_embeddings), sentence_embeddings.shape)
 
     # json
     results = {"rows": []}
@@ -64,6 +72,16 @@ async def embedding(body: EmbeddingRequest):
         results['rows'].append(row)
         # print()
 
+    print(results)
+    return results
+
+
+@app.post('/similarity')
+async def similarity(body: SimilarityRequest):
+    scores = sim_model.get_scores(body.sentences1, body.sentences2)
+    # json
+    scores.tolist()
+    results = {"scores": scores.tolist()}
     return results
 
 
